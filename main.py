@@ -6,6 +6,7 @@ import time
 
 from Snake import *
 from ScoreBoard import *
+from powerUp import *
 
 class Player:
     def __init__(self, name, controlls):
@@ -21,17 +22,19 @@ def display_winner(screen, winner_name):
     title = WINNER_FONT.render("WINNER: " + winner_name, False, (255, 255, 255))
     screen.blit(title, (150, 250))
 
-def check_intersection(snake_circle, circle_list_list):
+def check_intersection(snake_obj, circle_list_list):
+    snake_circle = snake_obj.get_snake_circle()
+    current_snakes_list = snake_obj.get_circle_list()
     for circle_list in circle_list_list:
-        for x in range(len(circle_list)-1):
-            if circle_v_circle_collision(snake_circle, circle_list[x]) == True:
-                return True
-    return False
+        if current_snakes_list == circle_list:
+            for x in range(len(circle_list)-5):
+                if circle_v_circle_collision(snake_circle, circle_list[x]) == True:
+                    return True
+        else:
+            for x in range(len(circle_list)):
+                if circle_v_circle_collision(snake_circle, circle_list[x]) == True:
+                    return True
 
-def check_intersection_SPECIAL(snake_circle, circle_list):
-    for x in range(len(circle_list)-1):
-        if circle_v_circle_collision(snake_circle, circle_list[x]) == True:
-            return True
     return False
 
 def start_screen(screen):
@@ -162,6 +165,8 @@ def start_game(screen, player_list, score_board):
 
     game_is_over = False
 
+    powerUp_manager = PowerUp_manager()
+
     for player in player_list:
         live_snake_list.append(Snake(player.name, player.controlls, random.randrange(200, 700),random.randrange(200, 400), random.randrange(0, 360), player.color))
 
@@ -202,10 +207,14 @@ def start_game(screen, player_list, score_board):
 
         for snake in live_snake_list:
             snake.update_position()
-            #snake.check_out_of_bounds()
+
+            snake.check_place_circle()
             snake.render(screen)
+
+            powerUp_manager.check_pick_up(snake)
+
             circle_list_list.append(snake.get_circle_list())
-            if snake.check_out_of_bounds_kill() == True:
+            if snake.check_out_of_bounds_kill(screen) == True:
                 placement_list.insert(0,snake.name)
                 dead_snake_list.append(live_snake_list.pop(live_snake_list.index(snake)))
                 if len(live_snake_list) == 1:
@@ -220,7 +229,7 @@ def start_game(screen, player_list, score_board):
             circle_list_list.append(snake.get_circle_list())
 
         for snake in live_snake_list:
-            if check_intersection(snake.get_snake_circle(), circle_list_list) == True:
+            if check_intersection(snake, circle_list_list) == True:
                 placement_list.insert(0,snake.name)
                 dead_snake_list.append(live_snake_list.pop(live_snake_list.index(snake)))
                 if len(live_snake_list) == 1:
@@ -230,19 +239,19 @@ def start_game(screen, player_list, score_board):
                     dead_snake_list.append(live_snake_list.pop(0))
 
         score_board.render(screen)
+        powerUp_manager.render(screen)
+
         if game_is_over:
             display_winner(screen, winner_name)
 
+        else:
+            powerUp_manager.update_seed()
+            powerUp_manager.update_powerUps()
 
         pygame.display.flip()
 
         clock.tick(60)
-        if circleTimer == 4:
-            for snake in live_snake_list:
-                snake.create_circle()
-            circleTimer = 0
 
-        circleTimer += 1
 
 
 
@@ -252,10 +261,11 @@ def main():
 
     pygame.init()
 
-    size = (900, 600)
+    size = (1500, 1000)
     screen = pygame.display.set_mode(size)
     pygame.display.set_caption("Curve Game")
     start_screen(screen)
     pygame.quit()
 
-main()
+if __name__ == "__main__":
+    main()

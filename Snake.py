@@ -24,6 +24,9 @@ class Snake:
         self.score = 0
         self.controlls = controlls
 
+        self.powerUps = []
+
+
         self.x = x
         self.y = y
         self.angle = angle
@@ -33,12 +36,19 @@ class Snake:
         self.velocity = 2
         self.thickness = 3
 
+        self.time_for_next_ball = math.ceil(1000*2*self.thickness/(self.velocity*60))
+        self.last_time_stamp = pygame.time.get_ticks()
+        #self.counter = 0
+
         self.polygon_list = [[(self.x + self.thickness*math.sin(self.angle + math.pi/2), self.y + self.thickness*math.cos(self.angle + math.pi/2)), (self.x + self.thickness*math.sin(self.angle - math.pi/2), self.y + self.thickness*math.cos(self.angle - math.pi/2)), (self.x + self.thickness*math.sin(self.angle + math.pi/2), self.y + self.thickness*math.cos(self.angle + math.pi/2)), (self.x + self.thickness*math.sin(self.angle - math.pi/2), self.y + self.thickness*math.cos(self.angle - math.pi/2))]]
 
         self.circle_list = []
         self.create_circle()
         #0 for forward, 1 for acw, -1 for cw
         self.moving = 0
+
+    def update_ball_time(self):
+        self.time_for_next_ball = math.ceil(1000*2*self.thickness/(self.velocity*60))
 
     def update_score(self, placing):
         self.score += math.ceil(10/placing)
@@ -63,6 +73,7 @@ class Snake:
         y2 = self.y + self.thickness*math.cos(self.angle - math.pi/2)
 
         index = int(len(self.polygon_list[-1])/2)
+
         self.polygon_list[-1][index] = (x2, y2)
         self.polygon_list[-1][index-1] = (x1, y1)
 
@@ -97,12 +108,22 @@ class Snake:
             pygame.gfxdraw.filled_polygon(screen, polygon, self.color)
         pygame.gfxdraw.filled_circle(screen, round(self.x), round(self.y), self.thickness, self.color)
         #for circle in self.circle_list:
-        #    circle.render(screen)
+            #circle.render(screen)
 
     def render_dir_vector(self, screen):
         x_end = round(self.x + 10*self.velocity * math.sin(self.angle))
         y_end = round(self.y + 10*self.velocity * math.cos(self.angle))
         pygame.gfxdraw.line(screen, self.x, self.y, x_end, y_end, (255,255,255))
+
+    def check_place_circle(self):
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_time_stamp >= self.time_for_next_ball:
+            self.create_circle()
+            self.counter = 0
+            self.last_time_stamp = current_time
+        else:
+            self.counter += 1
+
 
 
     def create_circle(self):
@@ -132,14 +153,15 @@ class Snake:
             self.y = 600
             self.cut_polygon()
 
-    def check_out_of_bounds_kill(self):
-        if self.x > 900:
+    def check_out_of_bounds_kill(self, screen):
+        width, height = screen.get_size()
+        if self.x > width:
             return True
 
         elif self.x < 0:
             return True
 
-        elif self.y > 600:
+        elif self.y > height:
             return True
 
         elif self.y < 0:
@@ -147,3 +169,10 @@ class Snake:
 
         else:
             return False
+
+    def resize(self, thick_change):
+        #Makes sure ball won't become too small
+        if self.thickness + thick_change > 0:
+            self.thickness += thick_change
+            self.counter = 0
+            self.update_ball_time()

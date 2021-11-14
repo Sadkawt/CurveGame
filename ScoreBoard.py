@@ -12,8 +12,6 @@ class ScoreBoard:
         self.player_list_next = self.player_list
 
     def update_score(self, placement_list):
-        print(placement_list)
-        print(self.player_list)
         for placement, name in enumerate(placement_list):
             for x in range(len(self.player_list)):
                 if self.player_list[x][0] == name:
